@@ -1,0 +1,55 @@
+package queries
+
+// DataMonitorPairsSQLMySQL содержит SQL-запрос для получения пар (EXCHANGE_ID, PAIR_ID, SYMBOL, MARKET_TYPE) для DataMonitor (MySQL)
+const DataMonitorPairsSQLMySQL = `
+SELECT 
+    stp.EXCHANGE_ID,
+    LOWER(e2.NAME) AS EXCHANGE_NAME,
+    t.PAIR_ID,
+    CONCAT(c1.SYMBOL, "/", c2.SYMBOL) AS SYMBOL,
+    'SPOT' AS MARKET_TYPE
+FROM (
+    SELECT 
+		tsa.PAIR_ID
+    FROM 
+		TRADE t
+    INNER JOIN 
+		TRADE_SPOT_ARRAYS tsa 
+			ON t.ID = tsa.TRADE_ID
+    INNER JOIN 
+		EXCHANGE_ACCOUNTS ea 
+			ON ea.ID = tsa.EAID
+    INNER JOIN 
+		EXCHANGE e ON e.ID = ea.EXID
+    WHERE 
+		t.ACTIVE = 1
+    	AND e.ACTIVE = 1
+		AND ea.ACTIVE = 1
+    UNION
+    SELECT 
+		msa.PAIR_ID
+    FROM 
+		MONITORING m
+    INNER JOIN 
+		MONITORING_SPOT_ARRAYS msa 
+			ON m.ID = msa.MONITOR_ID
+    WHERE 
+		m.ACTIVE = 1
+) t
+INNER JOIN 
+	SPOT_TRADE_PAIR stp 
+		ON t.PAIR_ID = stp.ID
+INNER JOIN 
+	EXCHANGE e2 
+		ON e2.ID = stp.EXCHANGE_ID
+INNER JOIN 
+	COIN c1 
+		ON stp.BASE_CURRENCY_ID = c1.ID 
+INNER JOIN 
+	COIN c2 
+		ON stp.QUOTE_CURRENCY_ID = c2.ID
+WHERE 
+	stp.ACTIVE = 1
+	AND e2.ACTIVE = 1
+ORDER BY 
+	stp.EXCHANGE_ID ASC`

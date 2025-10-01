@@ -1,0 +1,88 @@
+2025-09-29 18:52:55.079282	INFO	daemon	Daemon starting...
+2025-09-29 18:52:55.079393	DEBUG	daemon	[DEBUG] Process PID: 966718
+2025-09-29 18:52:55.079404	DEBUG	daemon	[DEBUG] Config: &{Daemon:{PollInterval:10 HttpPort:8080 StateFile:state/daemon.state} Server:{Port:0} Database:{Type:mysql Host:127.0.0.1 Port:3307 User:ct_daemon Password:test_password Database:ct_system} WebSocket:{PingInterval:5 ReconnectDelay:3} Logging:{Level:DEBUG File:logs/daemon.log MaxSizeMB:100 Mode:global Dir:logs/modules}}
+2025-09-29 18:52:55.079421	DEBUG	daemon	[DEBUG] Creating DB driver: type=mysql, cfg=map[database:ct_system host:127.0.0.1 password:test_password port:3307 user:ct_daemon]
+2025-09-29 18:52:55.079477	DEBUG	daemon	[DEBUG] Connecting to DB with retry...
+2025-09-29 18:52:55.079658	WARN	daemon	[DB] Connect attempt 1/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:52:57.081069	WARN	daemon	[DB] Connect attempt 2/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:52:59.082846	WARN	daemon	[DB] Connect attempt 3/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:01.084142	WARN	daemon	[DB] Connect attempt 4/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:03.084644	WARN	daemon	[DB] Connect attempt 5/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:05.085536	WARN	daemon	[DB] Connect attempt 6/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:07.086544	WARN	daemon	[DB] Connect attempt 7/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:09.087542	WARN	daemon	[DB] Connect attempt 8/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:11.088813	WARN	daemon	[DB] Connect attempt 9/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:13.090091	WARN	daemon	[DB] Connect attempt 10/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:15.090390	ERROR	daemon	[DB] All connect attempts failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:15.090448	FATAL	daemon	db connect failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:35.667167	INFO	daemon	Daemon starting...
+2025-09-29 18:53:35.667269	DEBUG	daemon	[DEBUG] Process PID: 967028
+2025-09-29 18:53:35.667279	DEBUG	daemon	[DEBUG] Config: &{Daemon:{PollInterval:10 HttpPort:8080 StateFile:state/daemon.state} Server:{Port:0} Database:{Type:mysql Host:127.0.0.1 Port:3307 User:ct_daemon Password:test_password Database:ct_system} WebSocket:{PingInterval:5 ReconnectDelay:3} Logging:{Level:DEBUG File:logs/daemon.log MaxSizeMB:100 Mode:global Dir:logs/modules}}
+2025-09-29 18:53:35.667293	DEBUG	daemon	[DEBUG] Creating DB driver: type=mysql, cfg=map[database:ct_system host:127.0.0.1 password:test_password port:3307 user:ct_daemon]
+2025-09-29 18:53:35.667323	DEBUG	daemon	[DEBUG] Connecting to DB with retry...
+2025-09-29 18:53:35.667484	WARN	daemon	[DB] Connect attempt 1/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:37.668842	WARN	daemon	[DB] Connect attempt 2/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:39.670109	WARN	daemon	[DB] Connect attempt 3/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:41.671456	WARN	daemon	[DB] Connect attempt 4/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 18:53:43.672572	WARN	daemon	[DB] Connect attempt 5/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:25.817164	INFO	daemon	Daemon starting...
+2025-09-29 22:14:25.817269	DEBUG	daemon	[DEBUG] Process PID: 1147128
+2025-09-29 22:14:25.817282	DEBUG	daemon	[DEBUG] Config: &{Daemon:{PollInterval:10 HttpPort:8080 StateFile:state/daemon.state} Server:{Port:0} Database:{Type:mysql Host:127.0.0.1 Port:3307 User:ct_daemon Password:test_password Database:ct_system} WebSocket:{PingInterval:5 ReconnectDelay:3} Logging:{Level:DEBUG File:logs/daemon.log MaxSizeMB:100 Mode:global Dir:logs/modules} OrderBook:{DebugLogRaw:true DebugLogMsg:true}}
+2025-09-29 22:14:25.817319	DEBUG	daemon	[DEBUG] Creating DB driver: type=mysql, cfg=map[database:ct_system host:127.0.0.1 password:test_password port:3307 user:ct_daemon]
+2025-09-29 22:14:25.817371	DEBUG	daemon	[DEBUG] Connecting to DB with retry...
+2025-09-29 22:14:25.817551	WARN	daemon	[DB] Connect attempt 1/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:27.818632	WARN	daemon	[DB] Connect attempt 2/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:29.819629	WARN	daemon	[DB] Connect attempt 3/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:31.821076	WARN	daemon	[DB] Connect attempt 4/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:33.822419	WARN	daemon	[DB] Connect attempt 5/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:35.823651	WARN	daemon	[DB] Connect attempt 6/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:37.824717	WARN	daemon	[DB] Connect attempt 7/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:39.826034	WARN	daemon	[DB] Connect attempt 8/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:41.827308	WARN	daemon	[DB] Connect attempt 9/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:43.828617	WARN	daemon	[DB] Connect attempt 10/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:45.829700	ERROR	daemon	[DB] All connect attempts failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:14:45.829756	FATAL	daemon	db connect failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:24.354552	INFO	daemon	Daemon starting...
+2025-09-29 22:27:24.354629	DEBUG	daemon	[DEBUG] Process PID: 1159887
+2025-09-29 22:27:24.354635	DEBUG	daemon	[DEBUG] Config: &{Daemon:{PollInterval:10 HttpPort:8080 StateFile:state/daemon.state} Server:{Port:0} Database:{Type:mysql Host:127.0.0.1 Port:3307 User:ct_daemon Password:test_password Database:ct_system} WebSocket:{PingInterval:5 ReconnectDelay:3} Logging:{Level:DEBUG File:logs/daemon.log MaxSizeMB:100 Mode:global Dir:logs/modules} OrderBook:{DebugLogRaw:true DebugLogMsg:true}}
+2025-09-29 22:27:24.354649	DEBUG	daemon	[DEBUG] Creating DB driver: type=mysql, cfg=map[database:ct_system host:127.0.0.1 password:test_password port:3307 user:ct_daemon]
+2025-09-29 22:27:24.354676	DEBUG	daemon	[DEBUG] Connecting to DB with retry...
+2025-09-29 22:27:24.354800	WARN	daemon	[DB] Connect attempt 1/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:26.356223	WARN	daemon	[DB] Connect attempt 2/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:28.357573	WARN	daemon	[DB] Connect attempt 3/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:30.358984	WARN	daemon	[DB] Connect attempt 4/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:32.360273	WARN	daemon	[DB] Connect attempt 5/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:34.361553	WARN	daemon	[DB] Connect attempt 6/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:36.362868	WARN	daemon	[DB] Connect attempt 7/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:38.364162	WARN	daemon	[DB] Connect attempt 8/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:40.364574	WARN	daemon	[DB] Connect attempt 9/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:42.365879	WARN	daemon	[DB] Connect attempt 10/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:44.366960	ERROR	daemon	[DB] All connect attempts failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:27:44.367017	FATAL	daemon	db connect failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:30:49.615429	INFO	daemon	Daemon starting...
+2025-09-29 22:30:49.615504	DEBUG	daemon	[DEBUG] Process PID: 1165432
+2025-09-29 22:30:49.615514	DEBUG	daemon	[DEBUG] Config: &{Daemon:{PollInterval:10 HttpPort:8080 StateFile:state/daemon.state} Server:{Port:0} Database:{Type:mysql Host:127.0.0.1 Port:3307 User:ct_daemon Password:test_password Database:ct_system} WebSocket:{PingInterval:5 ReconnectDelay:3} Logging:{Level:DEBUG File:logs/daemon.log MaxSizeMB:100 Mode:global Dir:logs/modules} OrderBook:{DebugLogRaw:true DebugLogMsg:true}}
+2025-09-29 22:30:49.615539	DEBUG	daemon	[DEBUG] Creating DB driver: type=mysql, cfg=map[database:ct_system host:127.0.0.1 password:test_password port:3307 user:ct_daemon]
+2025-09-29 22:30:49.615568	DEBUG	daemon	[DEBUG] Connecting to DB with retry...
+2025-09-29 22:30:49.615728	WARN	daemon	[DB] Connect attempt 1/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:30:51.617123	WARN	daemon	[DB] Connect attempt 2/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:30:53.618456	WARN	daemon	[DB] Connect attempt 3/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:30:55.620080	WARN	daemon	[DB] Connect attempt 4/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:30:57.621371	WARN	daemon	[DB] Connect attempt 5/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:30:59.622664	WARN	daemon	[DB] Connect attempt 6/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:01.623974	WARN	daemon	[DB] Connect attempt 7/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:03.625296	WARN	daemon	[DB] Connect attempt 8/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:05.626325	WARN	daemon	[DB] Connect attempt 9/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:07.627528	WARN	daemon	[DB] Connect attempt 10/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:09.628627	ERROR	daemon	[DB] All connect attempts failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:09.628693	FATAL	daemon	db connect failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:20.613023	INFO	daemon	Daemon starting...
+2025-09-29 22:31:20.613083	DEBUG	daemon	[DEBUG] Process PID: 1165945
+2025-09-29 22:31:20.613089	DEBUG	daemon	[DEBUG] Config: &{Daemon:{PollInterval:10 HttpPort:8080 StateFile:state/daemon.state} Server:{Port:0} Database:{Type:mysql Host:127.0.0.1 Port:3307 User:ct_daemon Password:test_password Database:ct_system} WebSocket:{PingInterval:5 ReconnectDelay:3} Logging:{Level:DEBUG File:logs/daemon.log MaxSizeMB:100 Mode:global Dir:logs/modules} OrderBook:{DebugLogRaw:true DebugLogMsg:true}}
+2025-09-29 22:31:20.613102	DEBUG	daemon	[DEBUG] Creating DB driver: type=mysql, cfg=map[database:ct_system host:127.0.0.1 password:test_password port:3307 user:ct_daemon]
+2025-09-29 22:31:20.613122	DEBUG	daemon	[DEBUG] Connecting to DB with retry...
+2025-09-29 22:31:20.613248	WARN	daemon	[DB] Connect attempt 1/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:22.614589	WARN	daemon	[DB] Connect attempt 2/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:24.616021	WARN	daemon	[DB] Connect attempt 3/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:26.617367	WARN	daemon	[DB] Connect attempt 4/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
+2025-09-29 22:31:28.618706	WARN	daemon	[DB] Connect attempt 5/10 failed: dial tcp 127.0.0.1:3307: connect: connection refused
