@@ -17,6 +17,7 @@ type DataMonitor struct {
 	logger       *log.Logger
 	stopChan     chan struct{}
 	wg           sync.WaitGroup
+	startTime    time.Time // время запуска DataMonitor
 	// Метрики
 	totalStarted int
 	totalStopped int
@@ -27,10 +28,11 @@ type DataMonitor struct {
 
 func NewDataMonitor(logger *log.Logger, driver db.DBDriver) *DataMonitor {
 	return &DataMonitor{
-		workers:  make(map[string]*dataworker.DataWorker),
-		logger:   logger,
-		stopChan: make(chan struct{}),
-		dbDriver: driver, // сохраняем драйвер
+		workers:   make(map[string]*dataworker.DataWorker),
+		logger:    logger,
+		stopChan:  make(chan struct{}),
+		startTime: time.Now(),
+		dbDriver:  driver, // сохраняем драйвер
 	}
 }
 
@@ -82,7 +84,13 @@ func (dm *DataMonitor) Stop() {
 		delete(dm.workers, k)
 	}
 	dm.workersMutex.Unlock()
+
+	// Ждем завершения горутин
 	dm.wg.Wait()
+
+	// Дополнительная пауза для корректного закрытия WebSocket соединений
+	time.Sleep(1 * time.Second)
+
 	close(dm.stopChan)
 	dm.logger.Info("[DATA_MONITOR] All data workers stopped")
 }
@@ -179,6 +187,60 @@ func (dm *DataMonitor) Metrics() (active, started, stopped, errors int) {
 	dm.workersMutex.Lock()
 	defer dm.workersMutex.Unlock()
 	return len(dm.workers), dm.totalStarted, dm.totalStopped, dm.totalErrors
+}
+
+// GetStartTime возвращает время запуска DataMonitor
+func (dm *DataMonitor) GetStartTime() time.Time {
+	return dm.startTime
+}
+
+// GetUptime возвращает время работы DataMonitor в секундах
+func (dm *DataMonitor) GetUptime() int64 {
+	return int64(time.Since(dm.startTime).Seconds())
+}
+
+// GetUptimeString возвращает время работы DataMonitor в читаемом формате
+func (dm *DataMonitor) GetUptimeString() string {
+	uptime := time.Since(dm.startTime)
+	hours := int(uptime.Hours())
+	minutes := int(uptime.Minutes()) % 60
+	seconds := int(uptime.Seconds()) % 60
+
+	if hours > 0 {
+		return fmt.Sprintf("%dh %dm %ds", hours, minutes, seconds)
+	} else if minutes > 0 {
+		return fmt.Sprintf("%dm %ds", minutes, seconds)
+	}
+	return fmt.Sprintf("%ds", seconds)
+}
+
+// GetWorkersInfo возвращает детальную информацию о всех активных data workers
+func (dm *DataMonitor) GetWorkersInfo() []map[string]interface{} {
+	dm.workersMutex.Lock()
+	defer dm.workersMutex.Unlock()
+
+	var workersInfo []map[string]interface{}
+
+	for key, worker := range dm.workers {
+		workerInfo := map[string]interface{}{
+			"key":           key,
+			"exchange":      worker.ExchangeName(),
+			"pairs":         worker.GetPairs(),
+			"market_type":   worker.GetMarketType(),
+			"depth":         worker.GetDepth(),
+			"pair_count":    worker.GetPairCount(),
+			"active":        worker.IsActive(),
+			"ws_status":     worker.GetWSConnectionStatus(),
+			"rest_enabled":  worker.GetRestAPIStatus(),
+			"uptime":        worker.GetUptime(),
+			"uptime_string": worker.GetUptimeString(),
+			"start_time":    worker.GetStartTime().Unix(),
+		}
+		workersInfo = append(workersInfo, workerInfo)
+	}
+
+	dm.logger.Debug("[DATA_MONITOR] Returning info for %d workers", len(workersInfo))
+	return workersInfo
 }
 
 // getExchangeByName получает Exchange по имени через драйвер БД

@@ -1,0 +1,63 @@
+{
+  "daemon_status": "RUNNING",
+  "db_status": "CONNECTED",
+  "trader_workers": [
+    {
+      "id": 7,
+      "active": true
+    }
+  ],
+  "data_monitor": {
+    "active_workers": 3,
+    "total_started": 5,
+    "total_stopped": 2,
+    "total_errors": 0,
+    "uptime": 1847,
+    "uptime_string": "30m 47s",
+    "start_time": 1696244153
+  },
+  "data_workers": [
+    {
+      "key": "1|spot",
+      "exchange": "htx",
+      "pairs": "BTC-USDT,ETH-USDT,LTC-USDT",
+      "market_type": "spot",
+      "depth": 5,
+      "pair_count": 3,
+      "active": true,
+      "ws_status": "CONNECTED",
+      "rest_enabled": true,
+      "uptime": 1840,
+      "uptime_string": "30m 40s",
+      "start_time": 1696244160
+    },
+    {
+      "key": "2|spot",
+      "exchange": "coinex",
+      "pairs": "BTC-USDT,ETH-USDT",
+      "market_type": "spot",
+      "depth": 5,
+      "pair_count": 2,
+      "active": true,
+      "ws_status": "CONNECTED",
+      "rest_enabled": true,
+      "uptime": 1835,
+      "uptime_string": "30m 35s",
+      "start_time": 1696244165
+    },
+    {
+      "key": "3|futures",
+      "exchange": "binance",
+      "pairs": "BNB-USDT",
+      "market_type": "futures",
+      "depth": 10,
+      "pair_count": 1,
+      "active": false,
+      "ws_status": "DISCONNECTED",
+      "rest_enabled": true,
+      "uptime": 1825,
+      "uptime_string": "30m 25s",
+      "start_time": 1696244175
+    }
+  ]
+}

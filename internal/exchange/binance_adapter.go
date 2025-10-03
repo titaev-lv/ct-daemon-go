@@ -166,8 +166,8 @@ func (a *BinanceAdapter) Start() error {
 
 func (a *BinanceAdapter) readLoopWithReconnect() {
 	for {
-		if a.ws == nil {
-			a.logger.Debug("[BINANCE_ADAPTER] WebSocket is nil, stopping read loop")
+		if a.ws == nil || !a.active {
+			a.logger.Debug("[BINANCE_ADAPTER] WebSocket is nil or adapter inactive, stopping read loop")
 			return
 		}
 
@@ -175,6 +175,10 @@ func (a *BinanceAdapter) readLoopWithReconnect() {
 		if err != nil {
 			a.logger.Error("[BINANCE_ADAPTER] Read error: %v, reconnecting...", err)
 			for {
+				if !a.active {
+					a.logger.Debug("[BINANCE_ADAPTER] Adapter inactive during reconnect, exiting")
+					return
+				}
 				time.Sleep(3 * time.Second)
 				a.logger.Debug("[BINANCE_ADAPTER] Attempting reconnection...")
 				if err := a.ws.Reconnect(); err == nil {

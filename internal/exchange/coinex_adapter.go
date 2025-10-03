@@ -207,7 +207,8 @@ func (a *CoinexAdapter) Start() error {
 
 func (a *CoinexAdapter) readLoopWithReconnect() {
 	for {
-		if a.ws == nil {
+		if a.ws == nil || !a.active {
+			a.logger.Debug("[COINEX_ADAPTER] WebSocket is nil or adapter inactive, exiting readLoop")
 			return
 		}
 
@@ -217,6 +218,10 @@ func (a *CoinexAdapter) readLoopWithReconnect() {
 
 			// Переподключение с ретраями
 			for {
+				if !a.active {
+					a.logger.Debug("[COINEX_ADAPTER] Adapter inactive during reconnect, exiting")
+					return
+				}
 				time.Sleep(3 * time.Second)
 				if err := a.ws.Reconnect(); err == nil {
 					a.logger.Info("[COINEX_ADAPTER] Reconnected, resubscribing...")

@@ -28,6 +28,10 @@ type DBDriver interface {
 	GetActiveTrades() ([]TradeCase, error)
 	GetActivePairsForDataMonitor() ([]DataMonitorPair, error)
 	GetExchangeByName(name string) (*Exchange, error)
+	// Методы для работы с произвольными запросами
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	BeginTx() (*sql.Tx, error)
+	GetType() string
 }
 
 // TradeCase структура для торгов

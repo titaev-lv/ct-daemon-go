@@ -192,7 +192,8 @@ func (a *PoloniexAdapter) Start() error {
 
 func (a *PoloniexAdapter) readLoopWithReconnect() {
 	for {
-		if a.ws == nil {
+		if a.ws == nil || !a.active {
+			a.logger.Debug("[POLONIEX_ADAPTER] WebSocket is nil or adapter inactive, exiting readLoop")
 			return
 		}
 
@@ -200,6 +201,10 @@ func (a *PoloniexAdapter) readLoopWithReconnect() {
 		if err != nil {
 			a.logger.Error("[POLONIEX_ADAPTER] Read error: %v, reconnecting...", err)
 			for {
+				if !a.active {
+					a.logger.Debug("[POLONIEX_ADAPTER] Adapter inactive during reconnect, exiting")
+					return
+				}
 				time.Sleep(3 * time.Second)
 				if err := a.ws.Reconnect(); err == nil {
 					a.logger.Info("[POLONIEX_ADAPTER] Reconnected, resubscribing...")

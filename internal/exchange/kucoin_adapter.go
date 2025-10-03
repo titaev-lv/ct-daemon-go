@@ -398,8 +398,8 @@ func (a *KucoinAdapter) Start() error {
 func (a *KucoinAdapter) readLoopWithReconnect() {
 	a.logger.Debug("[KUCOIN_ADAPTER] Starting readLoop")
 	for {
-		if a.ws == nil {
-			a.logger.Debug("[KUCOIN_ADAPTER] WebSocket is nil, exiting readLoop")
+		if a.ws == nil || !a.active {
+			a.logger.Debug("[KUCOIN_ADAPTER] WebSocket is nil or adapter inactive, exiting readLoop")
 			return
 		}
 
@@ -407,6 +407,10 @@ func (a *KucoinAdapter) readLoopWithReconnect() {
 		if err != nil {
 			a.logger.Error("[KUCOIN_ADAPTER] Read error: %v, reconnecting...", err)
 			for {
+				if !a.active {
+					a.logger.Debug("[KUCOIN_ADAPTER] Adapter inactive during reconnect, exiting")
+					return
+				}
 				time.Sleep(3 * time.Second)
 				if err := a.ws.Reconnect(); err == nil {
 					a.logger.Info("[KUCOIN_ADAPTER] Reconnected, resubscribing...")

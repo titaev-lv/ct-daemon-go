@@ -197,7 +197,8 @@ func (a *HtxAdapter) Start() error {
 // readLoopWithReconnect читает сообщения и восстанавливает подписки при reconnect
 func (a *HtxAdapter) readLoopWithReconnect() {
 	for {
-		if a.ws == nil {
+		if a.ws == nil || !a.active {
+			a.logger.Debug("[HTX_ADAPTER] WebSocket is nil or adapter inactive, exiting readLoop")
 			return
 		}
 
@@ -207,6 +208,10 @@ func (a *HtxAdapter) readLoopWithReconnect() {
 
 			// Переподключение с ретраями
 			for {
+				if !a.active {
+					a.logger.Debug("[HTX_ADAPTER] Adapter inactive during reconnect, exiting")
+					return
+				}
 				time.Sleep(3 * time.Second)
 				if err := a.ws.Reconnect(); err == nil {
 					a.logger.Info("[HTX_ADAPTER] Reconnected, resubscribing...")

@@ -20,32 +20,32 @@ type ServerConfig struct {
 // Server описывает HTTP API сервера
 // Добавить ссылку на DataMonitor
 type Server struct {
-	cfg           ServerConfig
-	driver        db.DBDriver
-	traderWorkers map[int]*worker.TraderWorker
-	workersMutex  *sync.Mutex
-	stopChan      chan struct{}
-	reloadConfig  func(path string) error
-	startWork     func() error
-	stopWork      func()
-	logger        *log.Logger
-	dataMonitor   *worker.DataMonitor // добавлено
+	cfg            ServerConfig
+	driver         db.DBDriver
+	traderWorkers  map[int]*worker.TraderWorker
+	workersMutex   *sync.Mutex
+	stopChan       chan struct{}
+	reloadConfig   func(path string) error
+	startWork      func() error
+	stopWork       func()
+	logger         *log.Logger
+	getDataMonitor func() *worker.DataMonitor // изменено на функцию getter
 }
 
 // NewServer создаёт новый API-сервер
-func NewServer(cfg ServerConfig, driver db.DBDriver, traderWorkers map[int]*worker.TraderWorker, workersMutex *sync.Mutex, stopChan chan struct{}, reloadConfig func(string) error, startWork func() error, stopWork func(), dataMonitor *worker.DataMonitor) *Server {
+func NewServer(cfg ServerConfig, driver db.DBDriver, traderWorkers map[int]*worker.TraderWorker, workersMutex *sync.Mutex, stopChan chan struct{}, reloadConfig func(string) error, startWork func() error, stopWork func(), getDataMonitor func() *worker.DataMonitor) *Server {
 	logger := log.New("api")
 	return &Server{
-		cfg:           cfg,
-		driver:        driver,
-		traderWorkers: traderWorkers,
-		workersMutex:  workersMutex,
-		stopChan:      stopChan,
-		reloadConfig:  reloadConfig,
-		startWork:     startWork,
-		stopWork:      stopWork,
-		logger:        logger,
-		dataMonitor:   dataMonitor,
+		cfg:            cfg,
+		driver:         driver,
+		traderWorkers:  traderWorkers,
+		workersMutex:   workersMutex,
+		stopChan:       stopChan,
+		reloadConfig:   reloadConfig,
+		startWork:      startWork,
+		stopWork:       stopWork,
+		logger:         logger,
+		getDataMonitor: getDataMonitor,
 	}
 }
 
@@ -97,18 +97,25 @@ func (s *Server) handleStatus(w http.ResponseWriter, _ *http.Request) {
 	status["trader_workers"] = traders
 
 	// Метрики DataMonitor
-	if s.dataMonitor != nil {
-		active, started, stopped, errors := s.dataMonitor.Metrics()
+	dataMonitor := s.getDataMonitor()
+	if dataMonitor != nil {
+		active, started, stopped, errors := dataMonitor.Metrics()
 		status["data_monitor"] = map[string]interface{}{
 			"active_workers": active,
 			"total_started":  started,
 			"total_stopped":  stopped,
 			"total_errors":   errors,
+			"uptime":         dataMonitor.GetUptime(),
+			"uptime_string":  dataMonitor.GetUptimeString(),
+			"start_time":     dataMonitor.GetStartTime().Unix(),
 		}
-		s.logger.Debug("[API][DEBUG] DataMonitor metrics: active=%d started=%d stopped=%d errors=%d", active, started, stopped, errors)
-	}
+		s.logger.Debug("[API][DEBUG] DataMonitor metrics: active=%d started=%d stopped=%d errors=%d uptime=%ds", active, started, stopped, errors, dataMonitor.GetUptime())
 
-	// Статус демона: RUNNING если есть активные воркеры, иначе STOPPED
+		// Детальная информация о data workers
+		workersInfo := dataMonitor.GetWorkersInfo()
+		status["data_workers"] = workersInfo
+		s.logger.Debug("[API][DEBUG] DataWorkers info: %d workers", len(workersInfo))
+	} // Статус демона: RUNNING если есть активные воркеры, иначе STOPPED
 	if activeCount > 0 {
 		status["daemon_status"] = "RUNNING"
 	} else {

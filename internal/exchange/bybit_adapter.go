@@ -192,7 +192,8 @@ func (a *BybitAdapter) Start() error {
 
 func (a *BybitAdapter) readLoopWithReconnect() {
 	for {
-		if a.ws == nil {
+		if a.ws == nil || !a.active {
+			a.logger.Debug("[BYBIT_ADAPTER] WebSocket is nil or adapter inactive, exiting readLoop")
 			return
 		}
 
@@ -200,6 +201,10 @@ func (a *BybitAdapter) readLoopWithReconnect() {
 		if err != nil {
 			a.logger.Error("[BYBIT_ADAPTER] Read error: %v, reconnecting...", err)
 			for {
+				if !a.active {
+					a.logger.Debug("[BYBIT_ADAPTER] Adapter inactive during reconnect, exiting")
+					return
+				}
 				time.Sleep(3 * time.Second)
 				if err := a.ws.Reconnect(); err == nil {
 					a.logger.Info("[BYBIT_ADAPTER] Reconnected, resubscribing...")

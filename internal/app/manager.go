@@ -23,6 +23,7 @@ type Manager struct {
 	serviceDaemon *service.Daemon
 	tradeMonitor  *worker.TradeMonitor
 	dataMonitor   *worker.DataMonitor
+	priceMonitor  *worker.PriceMonitor
 	traderWorkers map[int]*worker.TraderWorker
 	workersMutex  sync.Mutex
 	stopChan      chan struct{}
@@ -84,9 +85,10 @@ func (m *Manager) Start() {
 	// Передаем методы управления воркерами в API через замыкания
 	startWork := func() error { return m.StartWork() }
 	stopWork := func() { m.StopWork() }
+	getDataMonitor := func() *worker.DataMonitor { return m.dataMonitor }
 	m.logger.Debug("[START][DEBUG] Creating API server with config: %+v", apiCfg)
 	m.logger.Info("[START] Initializing API server on :%d", apiCfg.Port)
-	m.apiServer = api.NewServer(apiCfg, m.db, m.traderWorkers, &m.workersMutex, m.stopChan, reloadConfig, startWork, stopWork, m.dataMonitor)
+	m.apiServer = api.NewServer(apiCfg, m.db, m.traderWorkers, &m.workersMutex, m.stopChan, reloadConfig, startWork, stopWork, getDataMonitor)
 	go func() {
 		m.logger.Debug("[START][DEBUG] API server goroutine about to start")
 		m.logger.Info("[START] API server goroutine started")
@@ -132,7 +134,19 @@ func (m *Manager) StartWork() error {
 		m.logger.Info("[WORK] DataMonitor goroutine started")
 		m.dataMonitor.Start() // больше не нужно передавать драйвер
 	}()
-	m.logger.Info("[WORK] ServiceDaemon, TradeMonitor, DataMonitor и workers started")
+
+	// PriceMonitor
+	m.logger.Info("[WORK] Initializing PriceMonitor (interval=15s)...")
+	m.priceMonitor = worker.NewPriceMonitor(m.db, 500*time.Millisecond)
+	go func() {
+		m.logger.Debug("[WORK][DEBUG] PriceMonitor goroutine about to start")
+		m.logger.Info("[WORK] PriceMonitor goroutine started")
+		if err := m.priceMonitor.Start(); err != nil {
+			m.logger.Error("Failed to start PriceMonitor: %v", err)
+		}
+	}()
+
+	m.logger.Info("[WORK] ServiceDaemon, TradeMonitor, DataMonitor, PriceMonitor и workers started")
 	return nil
 }
 
@@ -145,7 +159,7 @@ func (m *Manager) StopWork() {
 	m.workStarted = false
 	// Сохраняем состояние: Active=false
 	state.SetActive(m.cfg.Daemon.StateFile, false)
-	m.logger.Info("[WORK] Stopping ServiceDaemon, TradeMonitor и всех trader workers...")
+	m.logger.Info("[WORK] Stopping ServiceDaemon, TradeMonitor, DataMonitor, PriceMonitor и всех trader workers...")
 	// Остановить сервис-демон (через cancel контекста)
 	if m.cancel != nil {
 		m.logger.Info("[WORK] Stopping ServiceDaemon...")
@@ -163,6 +177,11 @@ func (m *Manager) StopWork() {
 		m.logger.Info("[WORK] Stopping DataMonitor...")
 		m.dataMonitor.Stop()
 		m.dataMonitor = nil
+	}
+	if m.priceMonitor != nil {
+		m.logger.Info("[WORK] Stopping PriceMonitor...")
+		m.priceMonitor.Stop()
+		m.priceMonitor = nil
 	}
 	m.workersMutex.Lock()
 	for id, w := range m.traderWorkers {

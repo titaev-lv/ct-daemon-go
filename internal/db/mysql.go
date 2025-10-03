@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"daemon-go/internal/queries"
+	sqlMySQL "daemon-go/internal/sql/mysql"
 	"daemon-go/pkg/log"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -25,7 +25,7 @@ type MySQLDriver struct {
 
 // GetActivePairsForDataMonitor возвращает пары (EXCHANGE_ID, PAIR_ID, SYMBOL, MARKET_TYPE) для DataMonitor
 func (m *MySQLDriver) GetActivePairsForDataMonitor() ([]DataMonitorPair, error) {
-	rows, err := m.DB.Query(queries.DataMonitorPairsSQLMySQL)
+	rows, err := m.DB.Query(sqlMySQL.DataMonitorPairs)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (m *MySQLDriver) Ping() error {
 }
 
 func (m *MySQLDriver) GetActiveTrades() ([]TradeCase, error) {
-	rows, err := m.DB.Query("SELECT ID FROM TRADE WHERE ACTIVE=1")
+	rows, err := m.DB.Query(sqlMySQL.GetActiveTrades)
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +89,28 @@ func (m *MySQLDriver) GetActiveTrades() ([]TradeCase, error) {
 
 // GetExchangeByName возвращает Exchange по имени
 func (m *MySQLDriver) GetExchangeByName(name string) (*Exchange, error) {
-	row := m.DB.QueryRow("SELECT ID, NAME, ACTIVE, URL, BASE_URL, WEBSOCKET_URL, CLASS_TO_FACTORY, DESCRIPTION, DATE_CREATE, DATE_MODIFY, USER_CREATED, USER_MODIFY, DELETED FROM ct_system.EXCHANGE WHERE NAME = ? AND DELETED = 0", name)
+	row := m.DB.QueryRow(sqlMySQL.GetExchangeByName, name)
 	var ex Exchange
 	err := row.Scan(&ex.ID, &ex.Name, &ex.Active, &ex.Url, &ex.BaseUrl, &ex.WebsocketUrl, &ex.ClassToFactory, &ex.Description, &ex.DateCreate, &ex.DateModify, &ex.UserCreated, &ex.UserModify, &ex.Deleted)
 	if err != nil {
 		return nil, err
 	}
 	return &ex, nil
+}
+
+// Query выполняет произвольный SQL запрос
+func (m *MySQLDriver) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return m.DB.Query(query, args...)
+}
+
+// BeginTx начинает транзакцию
+func (m *MySQLDriver) BeginTx() (*sql.Tx, error) {
+	return m.DB.Begin()
+}
+
+// GetType возвращает тип базы данных
+func (m *MySQLDriver) GetType() string {
+	return "mysql"
 }
 
 func itoa(i int) string {

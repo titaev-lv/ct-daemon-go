@@ -4,6 +4,9 @@ import (
 	"daemon-go/internal/db"
 	"daemon-go/internal/exchange"
 	"daemon-go/pkg/log"
+	"fmt"
+	"strings"
+	"time"
 )
 
 // DataWorker - интерфейс для воркеров разных бирж
@@ -18,6 +21,8 @@ type DataWorker struct {
 	marketPairs []exchange.MarketPair // новые пары с PairID
 	marketType  string
 	depth       int
+	startTime   time.Time // время запуска worker'а
+	restEnabled bool      // включен ли REST API
 }
 
 var logger = log.New("DataWorker")
@@ -26,10 +31,12 @@ var logger = log.New("DataWorker")
 func NewDataWorker(ex db.Exchange) *DataWorker {
 	logger.Info("Creating DataWorker for exchange: %s (ID: %d)", ex.Name, ex.ID)
 	return &DataWorker{
-		adapter:    exchange.NewAdapter(ex),
-		pairs:      nil,
-		marketType: "spot",
-		depth:      5,
+		adapter:     exchange.NewAdapter(ex),
+		pairs:       nil,
+		marketType:  "spot",
+		depth:       5,
+		startTime:   time.Now(),
+		restEnabled: true, // по умолчанию REST API включен
 	}
 }
 
@@ -142,6 +149,84 @@ func (w *DataWorker) ExchangeName() string {
 	name := w.adapter.ExchangeName()
 	logger.Debug("ExchangeName called: %s", name)
 	return name
+}
+
+// GetPairs возвращает список торговых пар в виде строки через запятую
+func (w *DataWorker) GetPairs() string {
+	if len(w.marketPairs) > 0 {
+		var pairs []string
+		for _, mp := range w.marketPairs {
+			pairs = append(pairs, mp.Symbol)
+		}
+		return strings.Join(pairs, ",")
+	}
+	return strings.Join(w.pairs, ",")
+}
+
+// GetMarketType возвращает тип рынка (spot/futures)
+func (w *DataWorker) GetMarketType() string {
+	return w.marketType
+}
+
+// GetDepth возвращает глубину стакана
+func (w *DataWorker) GetDepth() int {
+	return w.depth
+}
+
+// GetPairCount возвращает количество отслеживаемых пар
+func (w *DataWorker) GetPairCount() int {
+	if len(w.marketPairs) > 0 {
+		return len(w.marketPairs)
+	}
+	return len(w.pairs)
+}
+
+// GetStartTime возвращает время запуска worker'а
+func (w *DataWorker) GetStartTime() time.Time {
+	return w.startTime
+}
+
+// GetUptime возвращает время работы в секундах
+func (w *DataWorker) GetUptime() int64 {
+	return int64(time.Since(w.startTime).Seconds())
+}
+
+// GetUptimeString возвращает время работы в читаемом формате
+func (w *DataWorker) GetUptimeString() string {
+	uptime := time.Since(w.startTime)
+	hours := int(uptime.Hours())
+	minutes := int(uptime.Minutes()) % 60
+	seconds := int(uptime.Seconds()) % 60
+
+	if hours > 0 {
+		return fmt.Sprintf("%dh %dm %ds", hours, minutes, seconds)
+	} else if minutes > 0 {
+		return fmt.Sprintf("%dm %ds", minutes, seconds)
+	}
+	return fmt.Sprintf("%ds", seconds)
+}
+
+// GetWSConnectionStatus возвращает статус WebSocket подключения
+func (w *DataWorker) GetWSConnectionStatus() string {
+	if w.adapter != nil {
+		// Предполагаем, что у адаптера есть метод для проверки WS статуса
+		// Если адаптер активен, значит WS подключен
+		if w.adapter.IsActive() {
+			return "CONNECTED"
+		}
+	}
+	return "DISCONNECTED"
+}
+
+// GetRestAPIStatus возвращает статус работы через REST API
+func (w *DataWorker) GetRestAPIStatus() bool {
+	return w.restEnabled
+}
+
+// SetRestAPIStatus устанавливает статус работы через REST API
+func (w *DataWorker) SetRestAPIStatus(enabled bool) {
+	w.restEnabled = enabled
+	logger.Debug("REST API status set to %v for %s", enabled, w.ExchangeName())
 }
 
 // difference returns elements in a but not in b

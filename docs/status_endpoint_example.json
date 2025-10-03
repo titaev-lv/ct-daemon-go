@@ -1,0 +1,45 @@
+{
+  "daemon_status": "RUNNING",
+  "db_status": "CONNECTED",
+  "trader_workers": [
+    {
+      "id": 7,
+      "active": true
+    }
+  ],
+  "data_monitor": {
+    "active_workers": 3,
+    "total_started": 5,
+    "total_stopped": 2,
+    "total_errors": 0
+  },
+  "data_workers": [
+    {
+      "key": "1|spot",
+      "exchange": "htx",
+      "pairs": "BTC-USDT,ETH-USDT,LTC-USDT",
+      "market_type": "spot",
+      "depth": 5,
+      "pair_count": 3,
+      "active": true
+    },
+    {
+      "key": "2|spot", 
+      "exchange": "coinex",
+      "pairs": "BTC-USDT,ETH-USDT",
+      "market_type": "spot",
+      "depth": 5,
+      "pair_count": 2,
+      "active": true
+    },
+    {
+      "key": "3|futures",
+      "exchange": "binance", 
+      "pairs": "BNB-USDT,ADA-USDT",
+      "market_type": "futures",
+      "depth": 10,
+      "pair_count": 2,
+      "active": false
+    }
+  ]
+}

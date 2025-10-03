@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"daemon-go/internal/queries"
+	sqlPostgres "daemon-go/internal/sql/postgres"
 	"daemon-go/pkg/log"
 
 	_ "github.com/lib/pq"
@@ -48,7 +48,7 @@ func (p *PostgresDriver) Ping() error {
 }
 
 func (p *PostgresDriver) GetActiveTrades() ([]TradeCase, error) {
-	rows, err := p.DB.Query("SELECT ID FROM TRADE WHERE ACTIVE=1")
+	rows, err := p.DB.Query(sqlPostgres.GetActiveTrades)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (p *PostgresDriver) GetActiveTrades() ([]TradeCase, error) {
 
 // Заглушка для универсального метода DataMonitor (реализовать по аналогии с MySQL при необходимости)
 func (p *PostgresDriver) GetActivePairsForDataMonitor() ([]DataMonitorPair, error) {
-	rows, err := p.DB.Query(queries.DataMonitorPairsSQLPostgres)
+	rows, err := p.DB.Query(sqlPostgres.DataMonitorPairs)
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +88,26 @@ func (p *PostgresDriver) GetActivePairsForDataMonitor() ([]DataMonitorPair, erro
 
 // GetExchangeByName возвращает Exchange по имени
 func (p *PostgresDriver) GetExchangeByName(name string) (*Exchange, error) {
-	row := p.DB.QueryRow(`SELECT ID, NAME, ACTIVE, URL, BASE_URL, WEBSOCKET_URL, CLASS_TO_FACTORY, DESCRIPTION, DATE_CREATE, DATE_MODIFY, USER_CREATED, USER_MODIFY, DELETED FROM ct_system.EXCHANGE WHERE NAME = $1 AND DELETED = false`, name)
+	row := p.DB.QueryRow(sqlPostgres.GetExchangeByName, name)
 	var ex Exchange
 	err := row.Scan(&ex.ID, &ex.Name, &ex.Active, &ex.Url, &ex.BaseUrl, &ex.WebsocketUrl, &ex.ClassToFactory, &ex.Description, &ex.DateCreate, &ex.DateModify, &ex.UserCreated, &ex.UserModify, &ex.Deleted)
 	if err != nil {
 		return nil, err
 	}
 	return &ex, nil
+}
+
+// Query выполняет произвольный SQL запрос
+func (p *PostgresDriver) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return p.DB.Query(query, args...)
+}
+
+// BeginTx начинает транзакцию
+func (p *PostgresDriver) BeginTx() (*sql.Tx, error) {
+	return p.DB.Begin()
+}
+
+// GetType возвращает тип базы данных
+func (p *PostgresDriver) GetType() string {
+	return "postgres"
 }

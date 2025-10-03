@@ -146,13 +146,144 @@ func testHTXAdapter() {
 	fmt.Printf("✅ Тестирование завершено\n")
 }
 
-func main() {
-	// Проверяем аргументы командной строки
-	if len(os.Args) > 1 && os.Args[1] == "test-htx" {
-		testHTXAdapter()
+func handleStartCommand() {
+	// Проверяем, не запущен ли уже daemon
+	stateFile := "state/daemon.state"
+	daemonState := state.LoadState(stateFile)
+	if daemonState.Active {
+		fmt.Printf("Daemon is already running\n")
 		return
 	}
 
+	// Запускаем daemon как основной процесс
+	fmt.Printf("Starting daemon...\n")
+
+	// Запускаем основную логику daemon (состояние установится внутри)
+	mainDaemonWithAutoStart()
+}
+
+func handleStopCommand() {
+	const cfgPath = "config/config.conf"
+
+	// Загружаем конфиг для получения StateFile
+	cfg, err := config.LoadConfig(cfgPath)
+	if err != nil {
+		fmt.Printf("Failed to load config: %v\n", err)
+		return
+	}
+
+	// Проверяем состояние daemon
+	daemonState := state.LoadState(cfg.Daemon.StateFile)
+	if !daemonState.Active {
+		fmt.Printf("Daemon is not running\n")
+		return
+	}
+
+	// Ищем процесс daemon
+	process, err := findDaemonProcess()
+	if err != nil {
+		fmt.Printf("Failed to find daemon process: %v\n", err)
+		return
+	}
+
+	if process == nil {
+		fmt.Printf("Daemon process not found\n")
+		// Сбрасываем состояние
+		daemonState.Active = false
+		state.SaveState(cfg.Daemon.StateFile, daemonState)
+		return
+	}
+
+	// Отправляем SIGTERM процессу
+	fmt.Printf("Stopping daemon (PID: %d)...\n", process.Pid)
+	if err := process.Signal(syscall.SIGTERM); err != nil {
+		fmt.Printf("Failed to send SIGTERM: %v\n", err)
+		return
+	}
+
+	// Ждем завершения процесса
+	time.Sleep(2 * time.Second)
+
+	// Проверяем, завершился ли процесс
+	if isProcessRunning(process.Pid) {
+		fmt.Printf("Process still running, sending SIGKILL...\n")
+		process.Signal(syscall.SIGKILL)
+		time.Sleep(1 * time.Second)
+	}
+
+	// Сбрасываем состояние
+	daemonState.Active = false
+	state.SaveState(cfg.Daemon.StateFile, daemonState)
+
+	fmt.Printf("Daemon stopped\n")
+}
+
+func handleStatusCommand() {
+	const cfgPath = "config/config.conf"
+
+	cfg, err := config.LoadConfig(cfgPath)
+	if err != nil {
+		fmt.Printf("Failed to load config: %v\n", err)
+		return
+	}
+
+	daemonState := state.LoadState(cfg.Daemon.StateFile)
+	process, _ := findDaemonProcess()
+
+	if daemonState.Active && process != nil {
+		fmt.Printf("Daemon is running (PID: %d)\n", process.Pid)
+	} else if daemonState.Active && process == nil {
+		fmt.Printf("Daemon state is active but process not found (stale state)\n")
+	} else {
+		fmt.Printf("Daemon is not running\n")
+	}
+}
+
+func findDaemonProcess() (*os.Process, error) {
+	// Читаем список процессов
+	processes, err := os.ReadDir("/proc")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, proc := range processes {
+		if !proc.IsDir() {
+			continue
+		}
+
+		// Проверяем, что это PID
+		pid, err := strconv.Atoi(proc.Name())
+		if err != nil {
+			continue
+		}
+
+		// Читаем cmdline
+		cmdlineBytes, err := os.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
+		if err != nil {
+			continue
+		}
+
+		cmdline := string(cmdlineBytes)
+		// Ищем наш daemon (daemon-go или ./daemon-go)
+		if strings.Contains(cmdline, "daemon-go") && strings.Contains(cmdline, "start") {
+			return os.FindProcess(pid)
+		}
+	}
+
+	return nil, nil
+}
+
+func isProcessRunning(pid int) bool {
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+
+	err = process.Signal(syscall.Signal(0))
+	return err == nil
+}
+
+func mainDaemon() {
 	const cfgPath = "config/config.conf"
 
 	// Минимальный logger для ошибок до парса конфига
@@ -309,6 +440,160 @@ func main() {
 	}
 }
 
+func mainDaemonWithAutoStart() {
+	const cfgPath = "config/config.conf"
+
+	// Минимальный logger для ошибок до парса конфига
+	preLogger := log.New("preinit")
+
+	fmt.Printf("[LOG][DEBUG] Loading config from %s\n", cfgPath)
+	cfg, err := config.LoadConfig(cfgPath)
+	if err != nil {
+		preLogger.Error("[DEBUG] Failed to load config: %v", err)
+		preLogger.Fatal("failed to load config (%s): %v", cfgPath, err)
+	}
+	fmt.Printf("[LOG][DEBUG] Config loaded: %+v\n", config.GetConfigForLogging(cfg))
+	if err := config.Validate(cfg); err != nil {
+		preLogger.Error("[DEBUG] Config validation failed: %v", err)
+		preLogger.Fatal("invalid config: %v", err)
+	}
+	fmt.Printf("[LOG][DEBUG] Config validated successfully\n")
+
+	// Установить конфигурацию для OrderBook логирования
+	exchange.SetOrderBookConfig(cfg)
+	fmt.Printf("[LOG][DEBUG] OrderBook config set: DebugLogRaw=%t, DebugLogMsg=%t\n",
+		cfg.OrderBook.DebugLogRaw, cfg.OrderBook.DebugLogMsg)
+
+	// Выбор режима логирования: global или modular
+	if cfg.Logging.Mode == "modular" {
+		log.SetGlobalMode(false)
+		fmt.Printf("[LOG][DEBUG] Modular logging mode enabled\n")
+	} else {
+		log.SetGlobalMode(true)
+		fmt.Printf("[LOG][DEBUG] Global logging mode enabled\n")
+	}
+
+	// Инициализация глобального лог-файла (для global-режима)
+	if cfg.Logging.Mode == "global" {
+		if err := log.Init(cfg.Logging.File); err != nil {
+			fmt.Printf("[LOG][ERROR] Failed to init log file: %v\n", err)
+		} else {
+			fmt.Printf("[LOG][DEBUG] Log file initialized: %s\n", cfg.Logging.File)
+		}
+	}
+
+	// Установить уровень логирования из конфига
+	if lvl, err := log.ParseLevel(cfg.Logging.Level); err == nil {
+		log.SetGlobalLevel(lvl)
+		fmt.Printf("[LOG][DEBUG] Log level set to %s\n", lvl.String())
+	} else {
+		fmt.Printf("[LOG][ERROR] Invalid log level in config: %s\n", cfg.Logging.Level)
+	}
+
+	// Создать основной логгер (daemon)
+	var logger *log.Logger
+	if cfg.Logging.Mode == "modular" && cfg.Logging.Dir != "" {
+		logPath := cfg.Logging.Dir + "/daemon.log"
+		l, err := log.NewWithFile("daemon", logPath)
+		if err != nil {
+			fmt.Printf("[LOG][ERROR] Failed to create modular logger: %v\n", err)
+			logger = log.New("daemon")
+		} else {
+			logger = l
+			fmt.Printf("[LOG][DEBUG] Modular logger created: %s\n", logPath)
+		}
+	} else {
+		logger = log.New("daemon")
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("panic: %v", r)
+			log.Close()
+		}
+
+		// При завершении daemon сбрасываем состояние на inactive
+		daemonState := &state.DaemonState{Active: false}
+		state.SaveState(cfg.Daemon.StateFile, daemonState)
+		log.Close()
+	}()
+
+	logger.Info("Daemon starting...")
+	logger.Debug("[DEBUG] Process PID: %d", os.Getpid())
+	logger.Debug("[DEBUG] Config: %+v", cfg)
+
+	// Создаём DB драйвер
+	dbCfg := map[string]string{
+		"host":     cfg.Database.Host,
+		"port":     strconv.Itoa(cfg.Database.Port),
+		"user":     cfg.Database.User,
+		"password": cfg.Database.Password,
+		"database": cfg.Database.Database,
+	}
+	logger.Debug("[DEBUG] Creating DB driver: type=%s, cfg=%+v", cfg.Database.Type, dbCfg)
+	driver, err := db.NewDriver(cfg.Database.Type, dbCfg)
+	if err != nil {
+		logger.Error("[DEBUG] Failed to create DB driver: %v", err)
+		logger.Fatal("failed to create db driver: %v", err)
+	}
+
+	logger.Debug("[DEBUG] Connecting to DB with retry...")
+	maxAttempts := 10
+	var lastErr error
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		if err := driver.Connect(); err != nil {
+			lastErr = err
+			logger.Warn("[DB] Connect attempt %d/%d failed: %v", attempt, maxAttempts, err)
+			time.Sleep(2 * time.Second)
+		} else {
+			logger.Info("DB connected (attempt %d)", attempt)
+			lastErr = nil
+			break
+		}
+	}
+	if lastErr != nil {
+		logger.Error("[DB] All connect attempts failed: %v", lastErr)
+		logger.Fatal("db connect failed: %v", lastErr)
+	}
+
+	logger.Debug("[DEBUG] Initializing Manager...")
+	manager := app.NewManager(cfg, driver, logger)
+	logger.Debug("[DEBUG] Manager initialized: %+v", manager)
+	logger.Debug("[DEBUG] Starting Manager components...")
+	manager.Start()
+	logger.Debug("[DEBUG] Manager started")
+
+	// Устанавливаем состояние active = true после успешной инициализации
+	state.SetActive(cfg.Daemon.StateFile, true)
+	logger.Info("Daemon state set to active")
+
+	// Автоматически запускаем work (для команды start)
+	logger.Info("Auto-starting work (daemon start command)...")
+	if err := manager.StartWork(); err != nil {
+		logger.Error("Failed to auto-start work: %v", err)
+	} else {
+		logger.Info("Work auto-started successfully")
+	}
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM /*, syscall.SIGHUP*/)
+	logger.Debug("[DEBUG] Signal handler registered, waiting for signals...")
+	for {
+		sig := <-sigChan
+		logger.Debug("[DEBUG] Signal received: %v", sig)
+		switch sig {
+		case syscall.SIGINT, syscall.SIGTERM:
+			logger.Debug("[DEBUG] Initiating graceful shutdown...")
+			if err := safeStop(manager, logger); err != nil {
+				logger.Error("error during shutdown: %v", err)
+			}
+			logger.Info("Daemon stopped gracefully")
+			return
+			// case syscall.SIGHUP:
+			//      logger.Info("SIGHUP received: reload config not implemented")
+		}
+	}
+}
+
 func safeStop(manager interface{ Stop() }, logger *log.Logger) (err error) {
 	logger.Debug("[DEBUG] safeStop called")
 	defer func() {
@@ -323,4 +608,27 @@ func safeStop(manager interface{ Stop() }, logger *log.Logger) (err error) {
 	manager.Stop()
 	logger.Debug("[DEBUG] manager.Stop() finished")
 	return nil
+}
+
+func main() {
+	// Проверяем аргументы командной строки
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "test-htx":
+			testHTXAdapter()
+			return
+		case "start":
+			handleStartCommand()
+			return
+		case "stop":
+			handleStopCommand()
+			return
+		case "status":
+			handleStatusCommand()
+			return
+		}
+	}
+
+	// Если аргументов нет, запускаем как daemon
+	mainDaemon()
 }
